@@ -1,0 +1,23 @@
+{
+  "name": "firstNodeProject",
+  "version": "1.0.0",
+  "description": "this is my first node project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/junaidbb/firstNodeProject.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/junaidbb/firstNodeProject/issues"
+  },
+  "homepage": "https://github.com/junaidbb/firstNodeProject#readme",
+  "dependencies": {
+    "express": "^4.14.0"
+  }
+}
