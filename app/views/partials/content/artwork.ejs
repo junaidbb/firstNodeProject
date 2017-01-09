@@ -1,0 +1,13 @@
+<article class="sidebar">
+            <h1 class="sidebar-title">Artwork</h1>
+            <p class="sidebar-body">while you attend the conference</p>
+            <div class="pixgrid clearfix">
+              <%
+              if (artwork.length > 0 ){
+              for(i=0; i < artwork.length; i++){
+              %>
+              <img src="/images/artwork/<%= artwork[i]%>" alt="<%= artwork[i]%>"/>
+              <%}}%>
+
+            </div>
+          </article><!-- article -->

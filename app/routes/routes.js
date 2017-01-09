@@ -1,59 +1,99 @@
 var express = require("express");
 var dataFile =require("../data/data.json");
+var feedbackData = require('../data/feedback.json');
+var fs  = require("fs");
 
+var SpeakersMongo = require('../models/speakers.js');
 
 module.exports  = function (app) {
 	
+	var pagePhotos = []; 
+	var speakers = dataFile.speakers;
 
-
-app.get('/',  function(req, res) {
-
-res.render('index');
-
-
-// 	res.send(`
-// 		<link rel="stylesheet" type="text/css" href="/css/style.css">
-// 		<h1>Welcome</h1>
-
-// <img src="/images/misc/background.jpg" alt="background" styles="height:300px"/>
-
-// 		`)
-});
-
-
-app.get('/speakers',  function(req, res) {
-	var info = '';
-
-	dataFile.speakers.forEach(function (arg) {
-		info += `
-		<link rel="stylesheet" type="text/css" href="/css/style.css">
-			<li>
-			<h2>${arg.name}</h2>
-			<img src="/images/speakers/${arg.shortname}_tn.jpg" alt="speaker"/>
-			<p>${arg.summary}</p>
-			</li>
-		`;
+	dataFile.speakers.forEach(function (item) {
+		pagePhotos = pagePhotos.concat(item.artwork); 
 	});
 
-	res.send(`${info}`)
-});
+	app.get('/api',  function(req, res) {
+		res.json(feedbackData);
+	});	
+
+	app.post('/api',  function(req, res) {
+		feedbackData.unshift(req.body);
+		fs.writeFile('app/data/feedback.json', JSON.stringify(feedbackData), 'utf8', function(err) {
+			if (err) {
+				console.log(err);
+			}
+		});
+		res.json(feedbackData);
+	});
+
+	app.delete('/api/:id', function(req, res) {
+		feedbackData.splice(req.params.id, 1);
+		fs.writeFile('app/data/feedback.json', JSON.stringify(feedbackData), 'utf8', function(err) {
+			if (err) {
+				console.log(err);
+			}
+		});
+		res.json(feedbackData);
+	});	
+
+	app.get('/',  function(req, res) {
+		res.render('index', {
+			pageTitle: 'Home',
+			artwork: pagePhotos,
+			speakers: speakers, 
+			pageID: 'home'
+		});
+
+		// SpeakersMongo.find(function(err, speakers){
+		// 	if (err) {
+		// 		res.json({info: "error during find cat", error: err});
+		// 	}
+		// 	console.log(speakers);
+		// });
 
 
-app.get('/speakers/:speakerId',  function(req, res) {
-	var info = '';
+	});
 
-	var speaker = dataFile.speakers[req.params.speakerId]
-		info += `
-		<link rel="stylesheet" type="text/css" href="/css/style.css">
-			<li>
-			<h1>${speaker.title}</h1>
-			<h2>${speaker.name}</h2>
-			<img src="/images/speakers/${speaker.shortname}_tn.jpg" alt="speaker"/>
-			<p>${speaker.summary}</p>
-			</li>
-		`;
 
-	res.send(`${info}`)
-});
+	app.get('/chat',  function(req, res) {
+		res.render('chat', {
+			pageTitle: 'chat',
+			pageID: 'chat'
+		});
+	});
+
+	app.get('/speakers',  function(req, res) {
+		res.render('speakers', {
+			pageTitle: 'speakers',
+			artwork: pagePhotos,
+			speakers: speakers, 
+			pageID: 'speakerList'
+		});
+	});
+
+	app.get('/speakers/:speakerId',  function(req, res) {
+		var speaker = [];
+		dataFile.speakers.forEach(function (item) {
+			if (item.shortname == req.params.speakerId) {
+				speaker.push(item);
+				pagePhotos = pagePhotos.concat(item.artwork);
+			} 
+		});
+		res.render('speakers', {
+			pageTitle: 'speaker',
+			artwork: pagePhotos,
+			speakers: speaker, 
+			pageID: 'speaker'
+		});
+	});
+
+	app.get('/feedback',  function(req, res) {
+		res.render('feedback', {
+			pageTitle: 'FeedBack',
+			pageID: 'feedback'
+		});
+	});
 
 }
