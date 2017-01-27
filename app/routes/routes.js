@@ -1,61 +1,146 @@
 var express = require("express");
 var dataFile =require("../data/data.json");
 var feedbackData = require('../data/feedback.json');
+var mongoose = require('mongoose')
 var fs  = require("fs");
 
 var SpeakersMongo = require('../models/speakers.js');
+var feedbackMongo  = require('../models/feedback.js');
 
 module.exports  = function (app) {
-	
-	var pagePhotos = []; 
+
+
+function getFeedBack(req, res) {
+				feedbackMongo.find({}).
+  sort({ created_at: -1 }).
+  exec(function (err, feed) {
+
+
+					if (err) {
+				return console.error(err);
+			} else {
+				res.format({
+					json: function() {
+						res.send(feed);
+					}
+				});
+			}
+
+
+			
+		});
+}
+
+
+
+
 	var speakers = dataFile.speakers;
 
-	dataFile.speakers.forEach(function (item) {
-		pagePhotos = pagePhotos.concat(item.artwork); 
-	});
-
 	app.get('/api',  function(req, res) {
-		res.json(feedbackData);
+						getFeedBack(req, res);
 	});	
 
 	app.post('/api',  function(req, res) {
-		feedbackData.unshift(req.body);
-		fs.writeFile('app/data/feedback.json', JSON.stringify(feedbackData), 'utf8', function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		res.json(feedbackData);
-	});
+		var feed = new feedbackMongo(req.body);
+		var promise = feed.save();
 
-	app.delete('/api/:id', function(req, res) {
-		feedbackData.splice(req.params.id, 1);
-		fs.writeFile('app/data/feedback.json', JSON.stringify(feedbackData), 'utf8', function(err) {
-			if (err) {
-				console.log(err);
-			}
-		});
-		res.json(feedbackData);
-	});	
+		promise.then(function (feedback) {
 
-	app.get('/',  function(req, res) {
-		res.render('index', {
-			pageTitle: 'Home',
-			artwork: pagePhotos,
-			speakers: speakers, 
-			pageID: 'home'
-		});
+			getFeedBack(req, res); 
 
-		// SpeakersMongo.find(function(err, speakers){
-		// 	if (err) {
-		// 		res.json({info: "error during find cat", error: err});
+		// 	feedbackMongo.find({}).
+  // sort({ created_at: -1 }).
+  // exec(function (err, feed) {
+
+
+		// 			if (err) {
+		// 		return console.error(err);
+		// 	} else {
+		// 		res.format({
+		// 			json: function() {
+		// 				res.send(feed);
+		// 			}
+		// 		});
 		// 	}
-		// 	console.log(speakers);
+
+
+			
 		// });
 
 
+
+
+		// 		feedbackMongo.find({}, function (err, feed) {
+
+
+		// 			if (err) {
+		// 		return console.error(err);
+		// 	} else {
+		// 		res.format({
+		// 			json: function() {
+		// 				res.send(feed);
+		// 			}
+		// 		});
+		// 	}
+
+
+			
+		// });
+
+
+		// feedbackData.unshift(req.body);
+		// fs.writeFile('app/data/feedback.json', JSON.stringify(feedbackData), 'utf8', function(err) {
+		// 	if (err) {
+		// 		console.log(err);
+		// 	}
+		// });
+		// res.json(feedbackData);
+	});
 	});
 
+	app.delete('/api/:id', function(req, res) {
+		// feedbackData.splice(req.params.id, 1);
+		// fs.writeFile('app/data/feedback.json', JSON.stringify(feedbackData), 'utf8', function(err) {
+		// 	if (err) {
+		// 		console.log(err);
+		// 	}
+		// });
+		// res.json(feedbackData);
+
+		feedbackMongo.findByIdAndRemove(req.params.id, function (err) {
+
+			if(!err){
+				getFeedBack(req, res); 
+			}
+		});
+	});	
+
+	app.get('/',  function(req, res) {
+		var pagePhotos = [];
+		SpeakersMongo.find({}, function (err, spkrs) {
+			if (err) {
+				return console.error(err);
+			} else {
+				spkrs.forEach(function (item) {
+					pagePhotos = pagePhotos.concat(item.artwork); 
+				});
+
+				res.format({
+					json: function() {
+						res.send({speakers: spkrs});
+					},
+					html: function() {
+						res.render('index', {
+							pageTitle: 'Home',
+							artwork: pagePhotos,
+							speakers: spkrs, 
+							pageID: 'home'
+						});               
+					}
+				});
+			}
+		});
+	});
 
 	app.get('/chat',  function(req, res) {
 		res.render('chat', {
@@ -65,27 +150,56 @@ module.exports  = function (app) {
 	});
 
 	app.get('/speakers',  function(req, res) {
-		res.render('speakers', {
-			pageTitle: 'speakers',
-			artwork: pagePhotos,
-			speakers: speakers, 
-			pageID: 'speakerList'
+		var pagePhotos = [];
+		SpeakersMongo.find({}, function (err, spkrs) {
+			if (err) {
+				return console.error(err);
+			} else {
+				spkrs.forEach(function (item) {
+					pagePhotos = pagePhotos.concat(item.artwork); 
+				});
+
+				res.format({
+					json: function() {
+						res.send({speakers: spkrs});
+					},
+					html: function() {
+						res.render('speakers', {
+							pageTitle: 'speakers',
+							artwork: pagePhotos,
+							speakers: spkrs, 
+							pageID: 'speakerList'
+						});
+					}
+				});
+			}
 		});
 	});
 
 	app.get('/speakers/:speakerId',  function(req, res) {
-		var speaker = [];
-		dataFile.speakers.forEach(function (item) {
-			if (item.shortname == req.params.speakerId) {
-				speaker.push(item);
-				pagePhotos = pagePhotos.concat(item.artwork);
-			} 
-		});
-		res.render('speakers', {
-			pageTitle: 'speaker',
-			artwork: pagePhotos,
-			speakers: speaker, 
-			pageID: 'speaker'
+		var spkrArt = []; 
+		SpeakersMongo.find({shortname: req.params.speakerId}, function (err, spkrs) {
+			if (err) {
+				return console.error(err);
+			} else {
+				spkrs.forEach(function (item) {
+					spkrArt = item.artwork; 
+				});
+
+				res.format({
+					json: function() {
+						res.send({speakers: spkrs});
+					}, 
+					html: function() {
+						res.render('speakers', {
+							pageTitle: 'speakers',
+							artwork: spkrArt,
+							speakers: spkrs, 
+							pageID: 'speaker'
+						});
+					}
+				});
+			}
 		});
 	});
 

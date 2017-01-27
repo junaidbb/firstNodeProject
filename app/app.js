@@ -4,10 +4,11 @@ var bodyParser = require('body-parser');
 var io = require('socket.io')();
 var mongoose = require('mongoose');
 
+mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost/roux'); 
- 
+
 var app = express()
- 
+
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
@@ -32,8 +33,8 @@ var server =  app.listen(app.get('port'), function () {
 
 io.attach(server);
 io.on('connection', function(socket) {
-  socket.on('postMessage', function(data) {
-  	console.log(data); 
-    io.emit('updateMessages', data);
-  });
+	socket.on('postMessage', function(data) {
+		console.log(data); 
+		io.emit('updateMessages', data);
+	});
 });
